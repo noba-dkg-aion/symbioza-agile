@@ -1,0 +1,48 @@
+#+title: Symbioza Agile
+
+* Overview
+  Symbioza Agile is a FastAPI microservice that exposes an API-first
+  Agile/Kanban backend. Tasks are persisted as JSON Lines in
+  ~data/tasks.jsonl~, making it easy to inspect or sync via git.
+
+* Requirements
+  - Python 3.11+
+  - Dependencies from =requirements.txt=
+
+* Setup
+  #+begin_src bash
+    python -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+  #+end_src
+
+* Running the API
+  #+begin_src bash
+    uvicorn main:app --reload
+  #+end_src
+
+  The server exposes three versioned endpoints:
+  | Method | Path             | Description                                                 |
+  |--------+------------------+-------------------------------------------------------------|
+  | POST   | /v1/tasks/add    | Create a new task (status defaults to ~TODO~)                |
+  | POST   | /v1/tasks/update | Update the status and/or priority of an existing task       |
+  | GET    | /v1/tasks/kanban | Retrieve tasks grouped by status (~TODO~, ~DOING~, ~DONE~)  |
+
+  =/v1/tasks/add= accepts =title=, optional =tags=, and optional =priority=
+  (e.g. ~high~, ~medium~, ~low~). The API responds with all metadata:
+  =id=, =ts=, and the default status ~TODO~.
+
+  =/v1/tasks/update= requires =id= plus at least one field (=status= or
+  =priority=). A =404= is returned when an unknown =id= is supplied.
+
+* Storage
+  - Tasks are appended to ~data/tasks.jsonl~ as JSONL records with fields:
+    =id=, =title=, =tags=, optional =priority=, =status= (TODO/DOING/DONE), and =ts=.
+  - The update endpoint rewrites the JSONL file to keep tasks consistent.
+  - Override the default location with the ~AGILE_TASKS_PATH~ environment
+    variable when deploying.
+
+* Testing
+  #+begin_src bash
+    pytest
+  #+end_src
